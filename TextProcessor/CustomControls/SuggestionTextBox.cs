@@ -19,6 +19,8 @@ namespace TextProcessor.CustomControls
 
         public static readonly DependencyProperty SuggestionSelectedCommandProperty =
             DependencyProperty.Register(nameof(SuggestionSelectedCommand),typeof(ICommand),typeof(SuggestionTextBox),new PropertyMetadata(null));
+        public static readonly DependencyProperty SuggestionWordAddedCommandProperty =
+            DependencyProperty.Register(nameof(SuggestionWordAddedCommand), typeof(ICommand), typeof(SuggestionTextBox), new PropertyMetadata(null));
 
 
 
@@ -40,6 +42,11 @@ namespace TextProcessor.CustomControls
         {
             get { return GetValue(SuggestionSelectedCommandProperty) as ICommand; }
             set { SetValue(SuggestionSelectedCommandProperty, value); }
+        }
+        public ICommand SuggestionWordAddedCommand
+        {
+            get { return GetValue(SuggestionWordAddedCommandProperty) as ICommand; }
+            set { SetValue(SuggestionWordAddedCommandProperty, value); }
         }
 
 
@@ -120,11 +127,17 @@ namespace TextProcessor.CustomControls
                     sessionWords[word]++;
                     if(sessionWords[word] == MIN_FOR_INCLUDE_DICTIONARY)
                     {
-                        await App.SqliteDatabase.WriteAsync(new Word
+                        var newWord = new Word
                         {
                             Content = word
-                        });
+                        };
+                        await App.SqliteDatabase.WriteAsync(newWord);
+                        SuggestionWordAddedCommand?.Execute(newWord);
                     }
+                }
+                else
+                {
+                    sessionWords.Add(word, 1);
                 }
             }
         }

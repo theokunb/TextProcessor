@@ -31,6 +31,7 @@
         </Menu>
         <custom:SuggestionTextBox Grid.Row="1"
                                   Suggestions="{Binding Suggestions}"
-                                  SuggestionSelectedCommand="{Binding CommandSuggestionSelected}"/>
+                                  SuggestionSelectedCommand="{Binding CommandSuggestionSelected}"
+                                  SuggestionWordAddedCommand="{Binding CommandNewWordAdded}"/>
     </Grid>
 </Window>
