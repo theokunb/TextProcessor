@@ -6,6 +6,7 @@ namespace TextProcessor.Services
     public interface IDatabase<T>
     {
         Task<IEnumerable<T>> GetAllAsync();
+        Task<T> GetOnceAsync(string input);
         Task<int> WriteAsync(T input);
         Task<int> UpdateAsync(T input);
         Task<int> DeleteAsync();

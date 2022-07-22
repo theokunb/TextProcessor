@@ -26,7 +26,7 @@ namespace TextProcessor.Models
 
             Clear();
 
-            using (StreamReader reader = new StreamReader(path, encoding: System.Text.Encoding.UTF8))
+            using (StreamReader reader = new StreamReader(path, encoding: System.Text.Encoding.Default))
             {
                 while (!reader.EndOfStream)
                 {
@@ -51,7 +51,7 @@ namespace TextProcessor.Models
             if (!File.Exists(path))
                 return;
 
-            using (StreamReader reader = new StreamReader(path, System.Text.Encoding.UTF8))
+            using (StreamReader reader = new StreamReader(path, System.Text.Encoding.Default))
             {
                 while (!reader.EndOfStream)
                 {

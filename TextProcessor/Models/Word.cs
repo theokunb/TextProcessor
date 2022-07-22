@@ -13,5 +13,10 @@ namespace TextProcessor.Models
         public int Id { get; set; }
         public string Content { get; set; }
         public int Frequency { get; set; }
+
+        public void IncreaseFrequency()
+        {
+            Frequency++;
+        }
     }
 }

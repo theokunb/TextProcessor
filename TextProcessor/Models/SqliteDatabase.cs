@@ -41,5 +41,10 @@ namespace TextProcessor.Models
             List<Word> collection = await connection.Table<Word>().Where(item => item.Content == input.Content).ToListAsync();
             return collection.Count > 0;
         }
+
+        public Task<Word> GetOnceAsync(string input)
+        {
+            return connection.Table<Word>().Where(element => element.Content == input).FirstAsync();
+        }
     }
 }

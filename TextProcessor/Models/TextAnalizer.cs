@@ -46,5 +46,23 @@ namespace TextProcessor.Models
                 Brushes.Black);
             return _text.BuildGeometry(new System.Windows.Point(0, 0));
         }
+        public string RemoveSpace(string input,int index)
+        {
+            if (input.Length < index)
+                return input;
+            int coutSpaces = 0;
+            for (int i = index - 1; i >= 0; i--)
+            {
+                if (input[i] == ' ')
+                {
+                    ++coutSpaces;
+                }
+                else
+                    break;
+            }
+            if (coutSpaces == 1)
+                return input.Remove(index - 1, 1);
+            return input;
+        }
     }
 }

@@ -1,6 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using TextProcessor.Models;
 
@@ -9,24 +12,35 @@ namespace TextProcessor.CustomControls
     [TemplatePart(Name = "editor", Type = typeof(TextBox))]
     public class SuggestionTextBox : Control
     {
-        public ObservableCollection<Word> Suggestions
-        {
-            get { return (ObservableCollection<Word>)GetValue(SuggestionsProperty); }
-            set { SetValue(SuggestionsProperty, value); }
-        }
 
 
         public static readonly DependencyProperty SuggestionsProperty =
             DependencyProperty.Register(nameof(Suggestions), typeof(ObservableCollection<Word>), typeof(SuggestionTextBox), new PropertyMetadata(null));
 
+        public static readonly DependencyProperty SuggestionSelectedCommandProperty =
+            DependencyProperty.Register(nameof(SuggestionSelectedCommand),typeof(ICommand),typeof(SuggestionTextBox),new PropertyMetadata(null));
+
+
 
         private TextAnalizer analizer;
+        private Dictionary<string, int> sessionWords;
+        private const int MIN_FOR_INCLUDE_DICTIONARY = 5;
 
 
 
         public TextBox TextBox;
         public Suggestion Suggestion;
 
+        public ObservableCollection<Word> Suggestions
+        {
+            get { return (ObservableCollection<Word>)GetValue(SuggestionsProperty); }
+            set { SetValue(SuggestionsProperty, value); }
+        }
+        public ICommand SuggestionSelectedCommand
+        {
+            get { return GetValue(SuggestionSelectedCommandProperty) as ICommand; }
+            set { SetValue(SuggestionSelectedCommandProperty, value); }
+        }
 
 
         public override void OnApplyTemplate()
@@ -38,6 +52,7 @@ namespace TextProcessor.CustomControls
                 Suggestion = Template.FindName("suggestion", this) as Suggestion;
                 Suggestion.OnSuggestionSelected += Suggestion_OnSuggestionSelected;
                 analizer = new TextAnalizer();
+                sessionWords = new Dictionary<string, int>();
                 if (TextBox != null)
                 {
                     TextBox.PreviewKeyDown += TextBox_PreviewKeyDown;
@@ -48,7 +63,7 @@ namespace TextProcessor.CustomControls
         }
 
 
-        private void Suggestion_OnSuggestionSelected(string word)
+        private async void Suggestion_OnSuggestionSelected(string word)
         {
             int currentPos = TextBox.CaretIndex;
             string firstPart = analizer.GetFirstPart(TextBox.Text, currentPos);
@@ -56,6 +71,12 @@ namespace TextProcessor.CustomControls
             TextBox.Text = TextBox.Text.Insert(currentPos, secondPart) + " ";
             TextBox.Focus();
             TextBox.CaretIndex = currentPos + secondPart.Length + 1;
+
+            var entityWord = await App.SqliteDatabase.GetOnceAsync(word);
+            if (entityWord == null)
+                return;
+            
+            SuggestionSelectedCommand?.Execute(entityWord);
         }
 
 
@@ -69,21 +90,42 @@ namespace TextProcessor.CustomControls
             Suggestion.ShowSuggestions(Suggestions, firstPart);
         }
 
-        private void TextBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == System.Windows.Input.Key.Enter)
+            if (e.Key == Key.Enter)
                 Suggestion.SuggestionPopup.IsOpen = false;
         }
 
-        private void TextBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        private async void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.Key == System.Windows.Input.Key.Down && Suggestion.ListSuggestions.Items.Count > 0 && !(e.OriginalSource is ListBoxItem))
+            if (e.Key == Key.Down && Suggestion.ListSuggestions.Items.Count > 0 && !(e.OriginalSource is ListBoxItem))
             {
                 Suggestion.ListSuggestions.Focus();
                 Suggestion.ListSuggestions.SelectedIndex = 0;
                 ListBoxItem item = Suggestion.ListSuggestions.ItemContainerGenerator.ContainerFromIndex(Suggestion.ListSuggestions.SelectedIndex) as ListBoxItem;
                 item.Focus();
                 e.Handled = true;
+            }
+            else if(e.Key == Key.OemComma || e.Key == Key.OemPeriod)
+            {
+                var currentIndex = TextBox.CaretIndex;
+                TextBox.Text = analizer.RemoveSpace(TextBox.Text, currentIndex);
+                TextBox.CaretIndex = currentIndex;
+            }
+            else if(e.Key == Key.Space)
+            {
+                var word = analizer.GetFirstPart(TextBox.Text, TextBox.CaretIndex);
+                if (sessionWords.Keys.Contains(word))
+                {
+                    sessionWords[word]++;
+                    if(sessionWords[word] == MIN_FOR_INCLUDE_DICTIONARY)
+                    {
+                        await App.SqliteDatabase.WriteAsync(new Word
+                        {
+                            Content = word
+                        });
+                    }
+                }
             }
         }
     }
