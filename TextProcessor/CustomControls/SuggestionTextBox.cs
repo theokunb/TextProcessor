@@ -63,7 +63,6 @@ namespace TextProcessor.CustomControls
                 if (TextBox != null)
                 {
                     TextBox.PreviewKeyDown += TextBox_PreviewKeyDown;
-                    TextBox.KeyDown += TextBox_KeyDown;
                     TextBox.TextChanged += TextBox_TextChanged;
                 }
             }
@@ -97,13 +96,8 @@ namespace TextProcessor.CustomControls
             Suggestion.ShowSuggestions(Suggestions, firstPart);
         }
 
-        private void TextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter)
-                Suggestion.SuggestionPopup.IsOpen = false;
-        }
 
-        private async void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Down && Suggestion.ListSuggestions.Items.Count > 0 && !(e.OriginalSource is ListBoxItem))
             {
@@ -119,7 +113,7 @@ namespace TextProcessor.CustomControls
                 TextBox.Text = analizer.RemoveSpace(TextBox.Text, currentIndex);
                 TextBox.CaretIndex = currentIndex;
             }
-            else if(e.Key == Key.Space)
+            else if(e.Key == Key.Space || e.Key == Key.Enter)
             {
                 var word = analizer.GetFirstPart(TextBox.Text, TextBox.CaretIndex);
                 if (sessionWords.Keys.Contains(word))
@@ -127,18 +121,15 @@ namespace TextProcessor.CustomControls
                     sessionWords[word]++;
                     if(sessionWords[word] == MIN_FOR_INCLUDE_DICTIONARY)
                     {
-                        var newWord = new Word
+                        var newWord = new Word 
                         {
                             Content = word
                         };
-                        await App.SqliteDatabase.WriteAsync(newWord);
                         SuggestionWordAddedCommand?.Execute(newWord);
                     }
                 }
                 else
-                {
                     sessionWords.Add(word, 1);
-                }
             }
         }
     }

@@ -15,6 +15,7 @@
                             <Grid>
                                 <TextBox x:Name="editor"
                                          TextWrapping="Wrap"
+                                         AcceptsReturn="True"
                                          AutoWordSelection="True"/>
                                 <custom:Suggestion x:Name="suggestion"/>
                             </Grid>

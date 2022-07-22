@@ -90,11 +90,12 @@ namespace TextProcessor.ViewModels
             await App.SqliteDatabase.UpdateAsync(entityWord);
             Suggestions.Where(element => element.Content == entityWord.Content).First().IncreaseFrequency();
         }
-        private void OnNewWordAdded(object param)
+        private async void OnNewWordAdded(object param)
         {
             var word = param as Word;
             if (word == null)
                 return;
+            await App.SqliteDatabase.WriteAsync(word);
             Suggestions.Add(word);
         }
     }
