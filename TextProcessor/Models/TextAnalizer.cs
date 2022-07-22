@@ -9,7 +9,7 @@ namespace TextProcessor.Models
     {
         public TextAnalizer()
         {
-            regIsChar = new Regex($"[a-zA-Z]");
+            regIsChar = new Regex($"[a-zA-Zа-яА-Я]");
         }
 
 
